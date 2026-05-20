@@ -14,17 +14,19 @@ public class RentalReceiptDAO {
         this.conn = conn;
     }
 
-    // Lấy danh sách phiếu thuê + thông tin truyện thuê (bookInfo)
+    // Lấy danh sách phiếu thuê (CHỈ LẤY PHIẾU ĐANG THUÊ)
     public List<RentalReceipt> getAllRentalReceipts() {
         List<RentalReceipt> list = new ArrayList<>();
 
         try {
-            String sql = "SELECT r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money, " +
-                         "STRING_AGG(CONCAT('MT', rd.book_id, '(SL:', rd.quantity, ')'), ', ') AS bookInfo " +
-                         "FROM rentals r " +
-                         "LEFT JOIN rental_details rd ON r.id = rd.rental_id " +
-                         "GROUP BY r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money " +
-                         "ORDER BY r.id DESC";
+            String sql =
+                    "SELECT r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money, " +
+                    "STRING_AGG(CONCAT('MT', rd.book_id, '(SL:', rd.quantity, ')'), ', ') AS bookInfo " +
+                    "FROM rentals r " +
+                    "LEFT JOIN rental_details rd ON r.id = rd.rental_id " +
+                    "WHERE r.status = N'đang thuê' " +
+                    "GROUP BY r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money " +
+                    "ORDER BY r.id DESC";
 
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
@@ -38,7 +40,6 @@ public class RentalReceiptDAO {
                 r.setReturnDate(rs.getDate("return_date"));
                 r.setTotalMoney(rs.getDouble("total_money"));
 
-                // lấy thông tin truyện thuê
                 r.setBookInfo(rs.getString("bookInfo"));
 
                 list.add(r);
@@ -59,8 +60,9 @@ public class RentalReceiptDAO {
         int rentalId = 0;
 
         try {
-            String sql = "INSERT INTO rentals (customer_id, staff_id, rent_date, return_date, status, total_money) " +
-                         "VALUES (?, ?, ?, ?, N'đang thuê', ?)";
+            String sql =
+                    "INSERT INTO rentals (customer_id, staff_id, rent_date, return_date, status, total_money) " +
+                    "VALUES (?, ?, ?, ?, N'đang thuê', ?)";
 
             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -123,6 +125,20 @@ public class RentalReceiptDAO {
             psRental.setInt(1, id);
             psRental.executeUpdate();
             psRental.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Update trạng thái đã trả (khi thanh toán)
+    public void updateStatusPaid(String selectedIds) {
+
+        try {
+            String sql = "UPDATE rentals SET status = N'đã trả' WHERE id IN (" + selectedIds + ")";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.executeUpdate();
+            ps.close();
 
         } catch (Exception e) {
             e.printStackTrace();

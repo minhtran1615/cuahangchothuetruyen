@@ -1,12 +1,15 @@
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Trang chủ</title>
+    <title>Redirect...</title>
 </head>
 <body>
 
-    <h2>Hello World!</h2>
+<%
+    response.sendRedirect(request.getContextPath() + "/login");
+%>
 
 </body>
 </html>

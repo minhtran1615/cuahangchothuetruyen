@@ -112,7 +112,7 @@
         }
 
         .total-box {
-            width: 350px;
+            width: 380px;
             background: #f8f9fb;
             padding: 18px;
             border-radius: 10px;
@@ -135,6 +135,34 @@
             margin-top: 10px;
         }
 
+        input[type="number"] {
+            width: 120px;
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .note-section {
+            margin-top: 25px;
+        }
+
+        .note-section label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .note-section textarea {
+            width: 100%;
+            margin-top: 8px;
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            resize: none;
+            height: 90px;
+        }
+
         .btn-area {
             margin-top: 25px;
             text-align: center;
@@ -148,6 +176,11 @@
             border: none;
             border-radius: 10px;
             cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-success:hover {
+            background: #1e8449;
         }
 
         .footer {
@@ -232,34 +265,72 @@
         </tbody>
     </table>
 
-    <div class="total-section">
-        <div class="total-box">
-            <p><span>Tổng tiền thuê:</span> <span><%= invoice.getTotalMoney() %> đ</span></p>
+    <!-- FORM THANH TOÁN -->
+    <form action="<%=request.getContextPath()%>/confirmPayment" method="post" id="paymentForm">
+        <input type="hidden" name="selectedIds" value="<%=request.getAttribute("selectedIds")%>">
+        <input type="hidden" name="finalTotal" id="finalTotalInput">
 
-            <p class="grand-total">
-                <span>Tổng tiền thanh toán:</span>
-                <span><%= invoice.getTotalMoney() %> đ</span>
-            </p>
+        <div class="total-section">
+            <div class="total-box">
+                <p>
+                    <span>Tổng tiền thuê:</span>
+                    <span id="rentMoney"><%= invoice.getTotalMoney() %></span> đ
+                </p>
+
+                <p>
+                    <span>Tiền phạt:</span>
+                    <span>
+                        <input type="number" id="fineMoney" name="fineMoney" value="0" min="0"> đ
+                    </span>
+                </p>
+
+                <p class="grand-total">
+                    <span>Tổng tiền thanh toán:</span>
+                    <span><span id="finalTotal"><%= invoice.getTotalMoney() %></span> đ</span>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="btn-area">
-        <form action="<%=request.getContextPath()%>/confirmPayment" method="post">
-    <input type="hidden" name="selectedIds" value="<%=request.getAttribute("selectedIds")%>">
+        <!-- NOTE -->
+        <div class="note-section">
+            <label>Ghi chú của nhân viên:</label>
+            <textarea name="note" placeholder="Nhập ghi chú (ví dụ: khách trả trễ 2 ngày, truyện bị rách bìa...)"></textarea>
+        </div>
 
-    <div class="btn-area">
-        <button type="submit" class="btn-success">
-            ✔ Thanh toán thành công
-        </button>
-    </div>
-</form>
-    </div>
+        <!-- BUTTON -->
+        <div class="btn-area">
+            <button type="submit" class="btn-success">
+                ✔ Thanh toán thành công
+            </button>
+        </div>
+    </form>
 
     <div class="footer">
         <p>Xin cảm ơn quý khách đã sử dụng dịch vụ! Hẹn gặp lại.</p>
     </div>
 
 </div>
+
+<script>
+    function updateFinalTotal() {
+        let rentMoney = parseFloat(document.getElementById("rentMoney").innerText);
+        let fineMoney = parseFloat(document.getElementById("fineMoney").value);
+
+        if (isNaN(fineMoney) || fineMoney < 0) {
+            fineMoney = 0;
+            document.getElementById("fineMoney").value = 0;
+        }
+
+        let total = rentMoney + fineMoney;
+
+        document.getElementById("finalTotal").innerText = total;
+        document.getElementById("finalTotalInput").value = total;
+    }
+
+    document.getElementById("fineMoney").addEventListener("input", updateFinalTotal);
+
+    updateFinalTotal();
+</script>
 
 </body>
 </html>
