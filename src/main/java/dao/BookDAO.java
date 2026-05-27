@@ -169,4 +169,89 @@ public class BookDAO {
 
         return list;
     }
+    
+    //loc theo the loai truyen
+    public List<Book> getBooksByCategory(String category) {
+
+        List<Book> list = new ArrayList<>();
+
+        try {
+            Connection conn = DBConnection.getConnection();
+
+            String sql = "SELECT * FROM books WHERE category = ?";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setString(1, category);
+
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()) {
+
+                Book b = new Book();
+
+                b.setId(rs.getInt("id"));
+                b.setTitle(rs.getString("title"));
+                b.setAuthor(rs.getString("author"));
+                b.setCategory(rs.getString("category"));
+                b.setQuantity(rs.getInt("quantity"));
+                b.setRentPricePerDay(rs.getInt("rent_price_per_day"));
+                b.setStatus(rs.getString("status"));
+
+                list.add(b);
+            }
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    //thong ke
+    public List<String[]> revenueStatistics() {
+
+        List<String[]> list = new ArrayList<>();
+
+        try {
+
+            Connection conn = DBConnection.getConnection();
+
+            String sql =
+            	    "SELECT b.category, " +
+            	    "SUM(rd.quantity) AS total_rented, " +
+            	    "SUM(rd.quantity * b.rent_price_per_day) AS revenue " +
+            	    "FROM rental_details rd " +
+            	    "JOIN books b ON rd.book_id = b.id " +
+            	    "JOIN rentals r ON rd.rental_id = r.id " +
+            	    "WHERE r.status = N'đã trả' " +
+            	    "GROUP BY b.category " +
+            	    "ORDER BY revenue DESC";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()) {
+
+                String[] row = new String[3];
+
+                row[0] = rs.getString("category");
+                row[1] = rs.getString("total_rented");
+                row[2] = rs.getString("revenue");
+
+                list.add(row);
+            }
+
+            rs.close();
+            ps.close();
+            conn.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
 }

@@ -9,6 +9,7 @@
 <title>Danh sách khách hàng</title>
 
 <style>
+
     * {
         margin: 0;
         padding: 0;
@@ -26,7 +27,7 @@
         width: 92%;
         max-width: 1100px;
         margin: auto;
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255,255,255,0.95);
         padding: 30px;
         border-radius: 18px;
         box-shadow: 0px 10px 30px rgba(0,0,0,0.15);
@@ -79,16 +80,61 @@
         color: white;
     }
 
-    /* INFO */
+    /* INFO + SEARCH */
+    .search-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
     .info {
-        margin-bottom: 15px;
         padding: 12px 16px;
         border-radius: 12px;
         background: #f5f7fa;
         box-shadow: inset 0px 2px 6px rgba(0,0,0,0.1);
         font-weight: bold;
         color: #2c3e50;
-        width: fit-content;
+    }
+
+    /* SEARCH */
+    .search-box {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .search-box input {
+        padding: 10px 14px;
+        border: 2px solid #dfe6e9;
+        border-radius: 10px;
+        outline: none;
+        min-width: 250px;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .search-box input:focus {
+        border-color: #2575fc;
+        box-shadow: 0 0 8px rgba(37,117,252,0.3);
+    }
+
+    .search-box button {
+        border: none;
+        padding: 10px 16px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #ff9966, #ff5e62);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .search-box button:hover {
+        transform: translateY(-2px);
+        opacity: 0.95;
     }
 
     /* TABLE */
@@ -145,7 +191,8 @@
     }
 
     /* RESPONSIVE */
-    @media(max-width: 768px) {
+    @media(max-width:768px) {
+
         h2 {
             font-size: 22px;
         }
@@ -155,9 +202,19 @@
             padding: 10px;
         }
 
-        .top-bar {
+        .top-bar,
+        .search-info-row {
             flex-direction: column;
             align-items: stretch;
+        }
+
+        .search-box {
+            flex-direction: column;
+        }
+
+        .search-box input,
+        .search-box button {
+            width: 100%;
         }
 
         .btn {
@@ -168,26 +225,69 @@
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
 
     <h2>👤 DANH SÁCH KHÁCH HÀNG</h2>
 
+    <!-- TOP -->
     <div class="top-bar">
-        <a class="btn btn-back" href="<%=request.getContextPath()%>/books">⬅ Quay lại danh sách truyện</a>
-        <a class="btn btn-add" href="<%=request.getContextPath()%>/addCustomer">➕ Thêm khách hàng</a>
+
+        <a class="btn btn-back"
+           href="<%=request.getContextPath()%>/books">
+
+            ⬅ Quay lại danh sách truyện
+
+        </a>
+
+        <a class="btn btn-add"
+           href="<%=request.getContextPath()%>/addCustomer">
+
+            ➕ Thêm khách hàng
+
+        </a>
+
     </div>
 
     <%
-        List<Customer> list = (List<Customer>) request.getAttribute("customers");
+        List<Customer> list =
+            (List<Customer>) request.getAttribute("customers");
     %>
 
-    <div class="info">
-        📌 Số lượng khách hàng: <%= (list == null ? 0 : list.size()) %>
+    <!-- INFO + SEARCH -->
+    <div class="search-info-row">
+
+        <div class="info">
+
+            📌 Số lượng khách hàng:
+            <%= (list == null ? 0 : list.size()) %>
+
+        </div>
+
+        <!-- FORM SEARCH -->
+        <form class="search-box"
+              action="<%=request.getContextPath()%>/searchCustomer"
+              method="get">
+
+            <input type="text"
+                   name="keyword"
+                   placeholder="Nhập tên khách hàng...">
+
+            <button type="submit">
+
+                🔍 Tìm kiếm
+
+            </button>
+
+        </form>
+
     </div>
 
+    <!-- TABLE -->
     <table>
+
         <tr>
             <th>Mã khách hàng</th>
             <th>Họ tên</th>
@@ -198,33 +298,59 @@
 
         <%
             if(list != null && !list.isEmpty()) {
+
                 for(Customer c : list) {
         %>
 
         <tr>
-           <td>MKH<%= c.getCustomerId() %></td>
-            <td><%=c.getFullname()%></td>
-            <td><%=c.getPhone()%></td>
-            <td><%=c.getRegisterDate()%></td>
 
             <td>
+                MKH<%= c.getCustomerId() %>
+            </td>
+
+            <td>
+                <%= c.getFullname() %>
+            </td>
+
+            <td>
+                <%= c.getPhone() %>
+            </td>
+
+            <td>
+                <%= c.getRegisterDate() %>
+            </td>
+
+            <td>
+
                 <a class="btn-delete"
                    href="<%=request.getContextPath()%>/deleteCustomer?id=<%=c.getCustomerId()%>"
                    onclick="return confirm('Bạn có chắc muốn xóa khách hàng này không?');">
-                   🗑 Xóa
+
+                    🗑 Xóa
+
                 </a>
+
             </td>
+
         </tr>
 
         <%
                 }
+
             } else {
         %>
 
         <tr>
-            <td colspan="5" style="padding:20px; font-weight:bold; color:#666;">
+
+            <td colspan="5"
+                style="padding:20px;
+                       font-weight:bold;
+                       color:#666;">
+
                 Không có khách hàng nào 📭
+
             </td>
+
         </tr>
 
         <%
