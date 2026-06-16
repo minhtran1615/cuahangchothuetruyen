@@ -11,6 +11,9 @@ import javax.servlet.http.*;
 import dao.RentalReceiptDAO;
 import model.RentalReceipt;
 
+import dao.BookDAO;
+import model.Book;
+
 @WebServlet("/addRentalReceipt")
 public class AddRentalReceiptServlet extends HttpServlet {
 
@@ -61,14 +64,35 @@ public class AddRentalReceiptServlet extends HttpServlet {
             // insert phiếu thuê và lấy rentalId
             int rentalId = dao.insertRentalReceiptReturnId(receipt);
 
-            // insert chi tiết truyện thuê
-            for (int i = 0; i < bookIds.length; i++) {
-                int bookId = Integer.parseInt(bookIds[i]);
-                int quantity = Integer.parseInt(quantities[i]);
+            BookDAO bookDAO = new BookDAO();
 
-                dao.insertRentalDetail(rentalId, bookId, quantity);
-            }
+         // insert chi tiết truyện thuê
+         for (int i = 0; i < bookIds.length; i++) {
 
+             int bookId = Integer.parseInt(bookIds[i]);
+             int quantity = Integer.parseInt(quantities[i]);
+
+             Book book = bookDAO.getBookById(bookId);
+
+             if (book == null) {
+                 throw new Exception("Không tìm thấy truyện ID = " + bookId);
+             }
+
+             if (quantity > book.getQuantity()) {
+                 throw new Exception(
+                     "Truyện '" + book.getTitle()
+                     + "' chỉ còn " + book.getQuantity()
+                     + " quyển trong kho!"
+                 );
+             }
+
+             dao.insertRentalDetail(rentalId, bookId, quantity);
+
+             // cập nhật số lượng còn lại
+             book.setQuantity(book.getQuantity() - quantity);
+
+             bookDAO.updateBook(book);
+         }
             conn.commit(); // lưu thành công
 
             resp.sendRedirect(req.getContextPath() + "/rentalReceipts");
@@ -80,10 +104,12 @@ public class AddRentalReceiptServlet extends HttpServlet {
                 ex.printStackTrace();
             }
 
-            e.printStackTrace();
-            resp.getWriter().println("Lỗi khi thêm phiếu thuê: " + e.getMessage());
+            req.setAttribute("error", e.getMessage());
 
-        } finally {
+            req.getRequestDispatcher("/WEB-INF/addRentalReceipt.jsp")
+               .forward(req, resp);
+        }
+        finally {
             try {
                 if (conn != null) conn.close();
             } catch (Exception e) {

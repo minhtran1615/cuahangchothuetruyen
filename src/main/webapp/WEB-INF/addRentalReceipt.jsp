@@ -170,11 +170,33 @@
     </style>
 </head>
 
+
 <body>
 
 <div class="container">
 
     <h2>➕ THÊM PHIẾU THUÊ</h2>
+    
+    <%
+String error = (String) request.getAttribute("error");
+if(error != null){
+%>
+
+<div style="
+    background:#ffe5e5;
+    color:#d63031;
+    border:1px solid #ff7675;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:15px;
+    font-weight:bold;
+">
+    ⚠ <%= error %>
+</div>
+
+<%
+}
+%>
 
     <form action="<%=request.getContextPath()%>/addRentalReceipt" method="post">
 
