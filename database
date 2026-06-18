@@ -1,0 +1,377 @@
+CREATE DATABASE ql_thuvien;
+GO
+
+USE ql_thuvien;
+GO
+
+CREATE TABLE books (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    title NVARCHAR(200) NOT NULL,
+    author NVARCHAR(100),
+    category NVARCHAR(100),
+    quantity INT DEFAULT 0
+);
+GO
+ALTER TABLE books
+ADD rent_price_per_day INT DEFAULT 0;
+
+ALTER TABLE books
+ADD status NVARCHAR(50) DEFAULT N'Còn';
+
+
+CREATE TABLE customers (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    fullname NVARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    address NVARCHAR(200)
+);
+GO
+EXEC sp_rename 'customers.address', 'registerDate', 'COLUMN';
+ALTER TABLE customers
+ALTER COLUMN registerDate DATE;
+
+
+CREATE TABLE users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    password VARCHAR(50),
+    role VARCHAR(20) DEFAULT 'staff'
+);
+GO
+
+ALTER TABLE users
+DROP CONSTRAINT DF__users__role__5070F446;
+GO
+
+ALTER TABLE users
+DROP COLUMN role;
+GO
+
+ALTER TABLE users
+ADD full_name NVARCHAR(100);
+GO
+
+
+CREATE TABLE rentals (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    customer_id INT NOT NULL,
+    rent_date DATE NOT NULL,
+    return_date DATE,
+    status NVARCHAR(50) DEFAULT N'dang_thue',
+
+    CONSTRAINT FK_rentals_customers FOREIGN KEY (customer_id)
+    REFERENCES customers(id)
+);
+GO
+ALTER TABLE rentals
+ADD staff_id INT;
+GO
+
+ALTER TABLE rentals
+ADD total_money DECIMAL(18,2) DEFAULT 0;
+GO
+
+ALTER TABLE rentals
+ADD CONSTRAINT FK_rentals_users
+FOREIGN KEY (staff_id) REFERENCES users(id);
+GO
+
+ALTER TABLE rentals
+ALTER COLUMN staff_id INT NOT NULL;
+GO
+
+
+CREATE TABLE rental_details (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    rental_id INT NOT NULL,
+    book_id INT NOT NULL,
+    quantity INT DEFAULT 1,
+
+    CONSTRAINT FK_rentaldetails_rentals FOREIGN KEY (rental_id)
+    REFERENCES rentals(id),
+
+    CONSTRAINT FK_rentaldetails_books FOREIGN KEY (book_id)
+    REFERENCES books(id)
+);
+GO
+
+
+INSERT INTO users(username, password, role)
+VALUES ('admin', '123', 'admin');
+GO
+
+
+INSERT INTO books(title, author, category, quantity, rent_price_per_day, status)
+VALUES
+(N'Thanh Gươm Diệt Quỷ', N'Gotouge Koyoharu', N'Hành động', 8, 5000, N'Còn'),
+(N'Naruto', N'Kishimoto Masashi', N'Hành động', 6, 6000, N'Còn'),
+(N'Bleach', N'Kubo Tite', N'Hành động', 4, 5500, N'Đang thuê'),
+(N'Thám tử lừng danh Conan', N'Aoyama Gosho', N'Trinh thám', 10, 4000, N'Còn'),
+(N'Dragon Ball', N'Toriyama Akira', N'Hành động', 7, 5000, N'Hết'),
+(N'Tokyo Revengers', N'Ken Wakui', N'Hành động', 5, 6500, N'Còn'),
+(N'Attack on Titan', N'Isayama Hajime', N'Kịch tính', 3, 8000, N'Hỏng'),
+(N'Jujutsu Kaisen', N'Gege Akutami', N'Hành động', 9, 7000, N'Còn');
+GO
+
+INSERT INTO customers(fullname, phone, registerDate)
+VALUES
+(N'Phạm Thị D', '0901234567', '2025-04-05'),
+(N'Đặng Văn E', '0911122233', '2025-04-18'),
+(N'Hoàng Thị F', '0988997766', '2025-05-02'),
+(N'Ngô Văn G', '0977554433', '2025-05-10'),
+(N'Bùi Thị H', '0966332211', '2025-06-01');
+GO
+
+INSERT INTO rentals(customer_id, staff_id, rent_date, return_date, status, total_money)
+VALUES
+(5,  1, '2026-04-01', '2026-04-05', N'đã trả',   20000),
+(6,  1, '2026-04-02', NULL,        N'đang thuê', 15000),
+(7,  1, '2026-04-03', '2026-04-06', N'đã trả',   18000),
+(8,  1, '2026-04-05', NULL,        N'đang thuê', 25000),
+(9,  1, '2026-04-07', '2026-04-10', N'đã trả',   30000),
+(10, 1, '2026-04-08', NULL,        N'đang thuê', 22000),
+(11, 1, '2026-04-09', '2026-04-12', N'đã trả',   27000),
+(12, 1, '2026-04-10', NULL,        N'đang thuê', 19000);
+GO
+
+INSERT INTO users(username, password, full_name)
+VALUES
+('nv01', '123', N'Nguyễn Văn A'),
+('nv02', '123', N'Trần Thị B');
+GO
+
+SELECT r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money,
+       STRING_AGG(CONCAT('MT', rd.book_id, '(SL:', rd.quantity, ')'), ', ') AS bookInfo
+FROM rentals r
+LEFT JOIN rental_details rd ON r.id = rd.rental_id
+GROUP BY r.id, r.customer_id, r.staff_id, r.rent_date, r.return_date, r.total_money
+ORDER BY r.id DESC;
+
+USE ql_thuvien;
+GO
+
+ALTER TABLE rental_details
+DROP CONSTRAINT FK_rentaldetails_books;
+GO
+
+ALTER TABLE rental_details
+ADD CONSTRAINT FK_rentaldetails_books
+FOREIGN KEY (book_id)
+REFERENCES books(id)
+ON DELETE CASCADE;
+GO
+
+SELECT * FROM users;
+
+UPDATE users
+SET full_name = N'Trần Văn Minh'
+WHERE id = 1
+
+INSERT INTO customers(fullname, phone, registerDate)
+VALUES
+(N'Lê Văn K',  '0902223344', '2026-03-01'),
+(N'Nguyễn Thị L', '0913334455', '2026-03-05'),
+(N'Trần Văn M', '0981112233', '2026-03-10'),
+(N'Phạm Thị N', '0978887766', '2026-03-15'),
+(N'Hoàng Văn O', '0965556677', '2026-03-20'),
+(N'Đặng Thị P', '0939991122', '2026-03-22'),
+(N'Vũ Văn Q',   '0942228899', '2026-03-25'),
+(N'Bùi Thị R',  '0923336677', '2026-03-28'),
+(N'Ngô Văn S',  '0914445566', '2026-03-30'),
+(N'Đỗ Thị T',   '0907778899', '2026-04-01');
+GO
+
+DELETE FROM rental_details;
+DELETE FROM rentals;
+DELETE FROM users;
+GO
+
+
+SELECT * FROM customers;
+
+DELETE FROM users;
+GO
+
+DBCC CHECKIDENT ('users', RESEED, 0);
+GO
+
+INSERT INTO users(username, password, full_name)
+VALUES
+('admin', '123', N'Admin'),
+('nv01', '123', N'Nguyễn Văn A'),
+('nv02', '123', N'Trần Thị B');
+GO
+
+SELECT * FROM users;
+
+INSERT INTO rentals(customer_id, staff_id, rent_date, return_date, status, total_money)
+VALUES
+(5, 1, '2026-04-01', '2026-04-05', N'đã trả', 20000),
+(6, 1, '2026-04-02', NULL, N'đang thuê', 15000),
+(7, 1, '2026-04-03', '2026-04-06', N'đã trả', 18000),
+(8, 1, '2026-04-05', NULL, N'đang thuê', 25000),
+(9, 1, '2026-04-07', '2026-04-10', N'đã trả', 30000),
+(10, 1, '2026-04-08', NULL, N'đang thuê', 22000),
+(11, 1, '2026-04-09', '2026-04-12', N'đã trả', 27000),
+(12, 1, '2026-04-10', NULL, N'đang thuê', 19000);
+GO
+
+DELETE FROM rental_details;
+DELETE FROM books;
+GO
+
+DBCC CHECKIDENT ('books', RESEED, 0);
+GO
+
+INSERT INTO books(title, author, category, quantity, rent_price_per_day, status)
+VALUES
+(N'Thanh Gươm Diệt Quỷ', N'Gotouge Koyoharu', N'Hành động', 8, 5000, N'Còn'),
+(N'Naruto', N'Kishimoto Masashi', N'Hành động', 6, 6000, N'Còn'),
+(N'Bleach', N'Kubo Tite', N'Hành động', 4, 5500, N'Đang thuê'),
+(N'Thám tử lừng danh Conan', N'Aoyama Gosho', N'Trinh thám', 10, 4000, N'Còn'),
+(N'Dragon Ball', N'Toriyama Akira', N'Hành động', 7, 5000, N'Hết'),
+(N'Tokyo Revengers', N'Ken Wakui', N'Hành động', 5, 6500, N'Còn'),
+(N'Attack on Titan', N'Isayama Hajime', N'Kịch tính', 3, 8000, N'Hỏng'),
+(N'Jujutsu Kaisen', N'Gege Akutami', N'Hành động', 9, 7000, N'Còn');
+GO
+
+DELETE FROM rental_details;
+DELETE FROM rentals;
+GO
+
+DBCC CHECKIDENT ('rentals', RESEED, 0);
+GO
+
+SELECT * FROM users;
+
+SELECT * FROM customers;
+
+INSERT INTO rentals(customer_id, staff_id, rent_date, return_date, status, total_money)
+VALUES
+(5, 1, '2026-04-01', '2026-04-05', N'đã trả', 20000),
+(6, 1, '2026-04-02', NULL, N'đang thuê', 15000),
+(7, 1, '2026-04-03', '2026-04-06', N'đã trả', 18000),
+(8, 1, '2026-04-05', NULL, N'đang thuê', 25000),
+(9, 1, '2026-04-07', '2026-04-10', N'đã trả', 30000),
+(10, 1, '2026-04-08', NULL, N'đang thuê', 22000),
+(11, 1, '2026-04-09', '2026-04-12', N'đã trả', 27000),
+(12, 1, '2026-04-10', NULL, N'đang thuê', 19000);
+GO
+
+INSERT INTO rental_details(rental_id, book_id, quantity)
+VALUES
+(1, 1, 2),
+(1, 4, 1),
+
+(2, 2, 1),
+(2, 6, 2),
+
+(3, 4, 3),
+
+(4, 1, 1),
+(4, 8, 2),
+
+(5, 3, 2),
+(5, 4, 1),
+
+(6, 6, 3),
+
+(7, 2, 2),
+(7, 8, 1),
+
+(8, 5, 2);
+GO
+
+
+SELECT 
+    b.category,
+    SUM(rd.quantity) AS total_rented,
+    SUM(rd.quantity * b.rent_price_per_day) AS revenue
+
+FROM rental_details rd
+
+JOIN books b
+ON rd.book_id = b.id
+
+GROUP BY b.category
+
+ORDER BY revenue DESC;
+
+ALTER TABLE rentals
+ADD created_at DATETIME DEFAULT GETDATE();
+
+
+SELECT 
+    b.category,
+    SUM(rd.quantity) AS total_rented,
+    SUM(rd.quantity * b.rent_price_per_day) AS revenue
+
+FROM rental_details rd
+
+JOIN books b
+ON rd.book_id = b.id
+
+JOIN rentals r
+ON rd.rental_id = r.id
+
+WHERE r.status = N'đã trả'
+
+GROUP BY b.category
+
+ORDER BY revenue DESC;
+
+INSERT INTO books
+(title, author, category, quantity, rent_price_per_day, status)
+VALUES
+
+(N'One Piece', N'Oda Eiichiro', N'Phiêu lưu', 10, 5000, N'Còn'),
+
+(N'Doraemon', N'Fujiko F Fujio', N'Thiếu nhi', 15, 5000, N'Còn'),
+
+(N'Spy x Family', N'Tatsuya Endo', N'Hài hước', 7, 5000, N'Còn'),
+
+(N'Death Note', N'Obata Takeshi', N'Tâm lý', 5, 5000, N'Còn'),
+
+(N'Hunter x Hunter', N'Togashi Yoshihiro', N'Hành động', 8, 5000, N'Còn'),
+
+(N'Fullmetal Alchemist', N'Hiromu Arakawa', N'Giả tưởng', 6,5000, N'Còn'),
+
+(N'Chainsaw Man', N'Tatsuki Fujimoto', N'Kinh dị', 9, 5000, N'Còn'),
+
+(N'Blue Lock', N'Muneyuki Kaneshiro', N'Thể thao', 11, 5000, N'Còn');
+GO
+
+UPDATE rentals
+SET return_date = DATEADD(DAY, 3, rent_date)
+WHERE return_date IS NULL;
+GO
+
+ALTER TABLE rentals
+ALTER COLUMN return_date DATE NOT NULL;
+GO
+
+INSERT INTO rentals
+(customer_id, staff_id, rent_date, return_date, status, total_money)
+VALUES
+
+(5, 1, '2026-05-01', '2026-05-05', N'đã trả', 20000),
+
+(6, 1, '2026-05-02', '2026-05-06', N'đã trả', 15000),
+
+(7, 1, '2026-05-03', '2026-05-08', N'đang thuê', 30000),
+
+(8, 1, '2026-05-04', '2026-05-09', N'đang thuê', 25000),
+
+(9, 1, '2026-05-05', '2026-05-10', N'đã trả', 18000),
+
+(10, 1, '2026-05-06', '2026-05-11', N'đang thuê', 22000),
+
+(11, 1, '2026-05-07', '2026-05-12', N'đã trả', 27000),
+
+(15, 1, '2026-05-08', '2026-05-13', N'đang thuê', 19000),
+
+(16, 1, '2026-05-09', '2026-05-14', N'đã trả', 35000),
+
+(17, 1, '2026-05-10', '2026-05-15', N'đang thuê', 24000);
+GO
+SELECT * FROM customers;
